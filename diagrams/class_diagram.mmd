@@ -1,0 +1,95 @@
+classDiagram
+    class ScenarioData {
+        +String title
+        +Scene[] scenes
+        +getSceneById(id)
+        +getTotalScenes()
+    }
+    
+    class Scene {
+        +Number id
+        +String type
+        +String source
+        +Number duration
+        +Audio audio
+        +Subtitle[] subtitles
+        +Transition transitions
+    }
+    
+    class Audio {
+        +String voice
+        +String bgm
+        +String se
+        +Number voiceVolume
+        +Number bgmVolume
+        +Number seVolume
+    }
+    
+    class Subtitle {
+        +String speaker
+        +String text
+        +Number start
+        +Number end
+    }
+    
+    class Transition {
+        +Number nextSceneId
+        +String effect
+    }
+    
+    class SceneManager {
+        +Number currentSceneId
+        +String playMode
+        +Boolean isPaused
+        +loadScene(sceneId)
+        +nextScene()
+        +previousScene()
+        +togglePlayMode()
+        +pause()
+        +resume()
+    }
+    
+    class MediaPlayer {
+        +HTMLElement videoElement
+        +HTMLAudioElement[] audioElements
+        +playImage(src)
+        +playVideo(src)
+        +playAudio(type, src)
+        +stopAll()
+        +setVolume(type, volume)
+    }
+    
+    class SubtitleEngine {
+        +Subtitle[] currentSubtitles
+        +Number currentTime
+        +displaySubtitle(subtitle)
+        +updateTime(time)
+        +clearSubtitles()
+    }
+    
+    class SaveManager {
+        +SaveData[] saveSlots
+        +save(slotId, data)
+        +load(slotId)
+        +deleteSave(slotId)
+        +getSaveList()
+    }
+    
+    class SaveData {
+        +Number sceneId
+        +String timestamp
+        +String thumbnail
+        +Object settings
+    }
+    
+    ScenarioData "1" --> "*" Scene
+    Scene "1" --> "1" Audio
+    Scene "1" --> "*" Subtitle
+    Scene "1" --> "1" Transition
+    
+    SceneManager --> ScenarioData
+    SceneManager --> MediaPlayer
+    SceneManager --> SubtitleEngine
+    SceneManager --> SaveManager
+    
+    SaveManager "1" --> "*" SaveData

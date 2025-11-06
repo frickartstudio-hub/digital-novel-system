@@ -1,0 +1,47 @@
+sequenceDiagram
+    participant User as ユーザー
+    participant UI as UIレイヤー
+    participant Controller as UIコントローラー
+    participant SceneMgr as シーンマネージャー
+    participant DataLoader as データローダー
+    participant MediaPlayer as メディアプレイヤー
+    participant SubtitleEngine as 字幕エンジン
+    participant SaveMgr as セーブマネージャー
+    
+    Note over User,SaveMgr: アプリケーション起動
+    User->>UI: アクセス
+    UI->>DataLoader: シナリオデータ要求
+    DataLoader-->>SceneMgr: シナリオデータ
+    SceneMgr->>UI: 初期画面表示
+    
+    Note over User,SaveMgr: シーン再生
+    User->>UI: 開始ボタンクリック
+    UI->>Controller: クリックイベント
+    Controller->>SceneMgr: シーン開始要求
+    SceneMgr->>MediaPlayer: メディア再生要求
+    MediaPlayer->>MediaPlayer: 画像/動画読み込み
+    MediaPlayer->>MediaPlayer: 音声再生開始
+    MediaPlayer-->>UI: メディア表示
+    
+    SceneMgr->>SubtitleEngine: 字幕表示要求
+    SubtitleEngine->>SubtitleEngine: タイミング計算
+    SubtitleEngine-->>UI: 字幕表示
+    
+    Note over User,SaveMgr: 自動再生モード
+    MediaPlayer->>MediaPlayer: 音声再生終了検知
+    MediaPlayer->>SceneMgr: 再生完了通知
+    SceneMgr->>SceneMgr: 次シーンへ遷移
+    
+    Note over User,SaveMgr: 手動進行モード
+    User->>UI: 画面クリック
+    UI->>Controller: クリックイベント
+    Controller->>SceneMgr: 次シーン要求
+    SceneMgr->>MediaPlayer: 現在のメディア停止
+    SceneMgr->>SceneMgr: 次シーンへ遷移
+    
+    Note over User,SaveMgr: セーブ処理
+    User->>UI: セーブボタンクリック
+    UI->>Controller: セーブ要求
+    Controller->>SaveMgr: 現在の状態保存要求
+    SaveMgr->>SaveMgr: LocalStorageに保存
+    SaveMgr-->>UI: 保存完了通知

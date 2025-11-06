@@ -1,0 +1,47 @@
+graph TB
+    subgraph "ユーザー"
+        User[ユーザー<br/>PC/スマートフォン]
+    end
+    
+    subgraph "Webブラウザ"
+        UI[UIレイヤー<br/>HTML/CSS]
+        
+        subgraph "アプリケーションコア"
+            SceneManager[シーンマネージャー<br/>進行管理・状態管理]
+            MediaPlayer[メディアプレイヤー<br/>画像/動画/音声再生]
+            SubtitleEngine[字幕エンジン<br/>タイミング制御・表示]
+            UIController[UIコントローラー<br/>ユーザー入力処理]
+            DataLoader[データローダー<br/>シナリオ読み込み]
+            SaveManager[セーブマネージャー<br/>進行状況管理]
+        end
+        
+        subgraph "ブラウザAPI"
+            VideoAPI[HTML5 Video API]
+            AudioAPI[HTML5 Audio API]
+            StorageAPI[Web Storage API<br/>LocalStorage/IndexedDB]
+        end
+    end
+    
+    subgraph "静的ファイル"
+        ScenarioData[シナリオデータ<br/>JSON]
+        MediaFiles[メディアファイル<br/>画像/動画/音声]
+    end
+    
+    User -->|クリック/タップ| UI
+    UI -->|イベント| UIController
+    UIController --> SceneManager
+    SceneManager --> MediaPlayer
+    SceneManager --> SubtitleEngine
+    SceneManager --> DataLoader
+    SceneManager --> SaveManager
+    
+    MediaPlayer --> VideoAPI
+    MediaPlayer --> AudioAPI
+    SaveManager --> StorageAPI
+    
+    DataLoader -->|読み込み| ScenarioData
+    MediaPlayer -->|読み込み| MediaFiles
+    
+    MediaPlayer -->|更新| UI
+    SubtitleEngine -->|更新| UI
+    SceneManager -->|更新| UI

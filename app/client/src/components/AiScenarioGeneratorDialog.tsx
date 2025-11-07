@@ -90,6 +90,7 @@ export function AiScenarioGeneratorDialog({
           "end": 3000
         }
       ],
+      "backgroundPrompt": "Detailed description of the background image in English",
       "transition": {
         "type": "fade",
         "duration": 500
@@ -99,11 +100,11 @@ export function AiScenarioGeneratorDialog({
 }
 \`\`\`
 
-重要な注意事項:
-- 各シーンには魅力的な背景画像の説明（英語）をコメントで追加してください
-- 字幕は日本語で、自然な会話や説明文にしてください
-- シーンの長さ（duration）は字幕の内容に応じて適切に設定してください
-- JSON形式のみを出力し、余計な説明は不要です`;
+  重要な注意事項:
+  - 各シーンの背景描写は "backgroundPrompt" フィールドに英語で記載してください
+  - 字幕は日本語で、自然な会話や説明文にしてください
+  - シーンの長さ（duration）は字幕の内容に応じて適切に設定してください
+  - JSON形式のみを出力し、余計な説明は不要です`;
 
       const response = await OpenRouterClient.chat(
         [

@@ -32,7 +32,7 @@ export function AiVoiceGeneratorDialog({
   const [generatedAudio, setGeneratedAudio] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // テキストを初期化
+  // 初期テキストを反映
   useState(() => {
     if (initialText) {
       setText(initialText);
@@ -46,8 +46,8 @@ export function AiVoiceGeneratorDialog({
       return;
     }
 
-    if (!ApiKeyManager.has('openrouter')) {
-      toast.error('OpenRouter APIキーが設定されていません');
+    if (!ApiKeyManager.has('gemini')) {
+      toast.error('Gemini APIキーが設定されていません');
       return;
     }
 
@@ -77,19 +77,14 @@ export function AiVoiceGeneratorDialog({
   const handleUse = () => {
     if (!generatedAudio) return;
 
-    // ファイルパスを生成
     const timestamp = Date.now();
     const filePath = `/audio/ai_generated_${timestamp}.mp3`;
-
-    // localStorageに保存
     localStorage.setItem(`file_${filePath}`, generatedAudio);
 
-    // 親コンポーネントに通知
     onGenerated(filePath);
     toast.success('音声を追加しました');
     onOpenChange(false);
 
-    // リセット
     setText('');
     setGeneratedAudio(null);
   };
@@ -100,7 +95,7 @@ export function AiVoiceGeneratorDialog({
         <DialogHeader>
           <DialogTitle>AI音声生成（TTS）</DialogTitle>
           <DialogDescription>
-            Gemini 2.5 Pro Preview TTSを使用して音声を生成します
+            Gemini 2.5 Pro Preview TTS（Gemini APIキー必須）でテキストを音声化します。
           </DialogDescription>
         </DialogHeader>
 
@@ -112,11 +107,11 @@ export function AiVoiceGeneratorDialog({
               id="text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="これは、ある小さな町で起きた物語です。"
+              placeholder="これは、ある小さな町で起きた物語です..."
               rows={6}
             />
             <p className="text-xs text-muted-foreground">
-              日本語・英語に対応しています
+              日本語・英語どちらでも入力できます。
             </p>
           </div>
 
@@ -160,3 +155,4 @@ export function AiVoiceGeneratorDialog({
     </Dialog>
   );
 }
+

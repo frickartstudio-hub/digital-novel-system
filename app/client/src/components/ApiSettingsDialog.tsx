@@ -20,25 +20,39 @@ interface ApiSettingsDialogProps {
 
 export function ApiSettingsDialog({ open, onOpenChange }: ApiSettingsDialogProps) {
   const [openrouterKey, setOpenrouterKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
+  const [showOpenrouterKey, setShowOpenrouterKey] = useState(false);
+  const [geminiKey, setGeminiKey] = useState('');
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
 
-  // 初期化時にAPIキーを読み込む
+  // ダイアログを開いたときに保存済みのキーを読み込む
   useEffect(() => {
     if (open) {
-      const key = ApiKeyManager.get('openrouter');
-      setOpenrouterKey(key || '');
+      const openrouter = ApiKeyManager.get('openrouter');
+      setOpenrouterKey(openrouter || '');
+      const gemini = ApiKeyManager.get('gemini');
+      setGeminiKey(gemini || '');
     }
   }, [open]);
 
   // 保存
   const handleSave = () => {
-    if (openrouterKey.trim()) {
-      ApiKeyManager.set('openrouter', openrouterKey.trim());
-      toast.success('APIキーを保存しました');
-      onOpenChange(false);
+    const trimmedOpenrouter = openrouterKey.trim();
+    const trimmedGemini = geminiKey.trim();
+
+    if (trimmedOpenrouter) {
+      ApiKeyManager.set('openrouter', trimmedOpenrouter);
     } else {
-      toast.error('APIキーを入力してください');
+      ApiKeyManager.remove('openrouter');
     }
+
+    if (trimmedGemini) {
+      ApiKeyManager.set('gemini', trimmedGemini);
+    } else {
+      ApiKeyManager.remove('gemini');
+    }
+
+    toast.success('APIキーを保存しました');
+    onOpenChange(false);
   };
 
   return (
@@ -47,7 +61,7 @@ export function ApiSettingsDialog({ open, onOpenChange }: ApiSettingsDialogProps
         <DialogHeader>
           <DialogTitle>API設定</DialogTitle>
           <DialogDescription>
-            AI生成機能を使用するためのAPIキーを設定してください
+            AI生成機能を利用するためのAPIキーを入力してください。
           </DialogDescription>
         </DialogHeader>
 
@@ -59,7 +73,7 @@ export function ApiSettingsDialog({ open, onOpenChange }: ApiSettingsDialogProps
               <div className="relative flex-1">
                 <Input
                   id="openrouter-key"
-                  type={showKey ? 'text' : 'password'}
+                  type={showOpenrouterKey ? 'text' : 'password'}
                   value={openrouterKey}
                   onChange={(e) => setOpenrouterKey(e.target.value)}
                   placeholder="sk-or-v1-..."
@@ -70,9 +84,9 @@ export function ApiSettingsDialog({ open, onOpenChange }: ApiSettingsDialogProps
                   variant="ghost"
                   size="icon"
                   className="absolute right-0 top-0 h-full"
-                  onClick={() => setShowKey(!showKey)}
+                  onClick={() => setShowOpenrouterKey((prev) => !prev)}
                 >
-                  {showKey ? (
+                  {showOpenrouterKey ? (
                     <EyeOff className="h-4 w-4" />
                   ) : (
                     <Eye className="h-4 w-4" />
@@ -88,27 +102,68 @@ export function ApiSettingsDialog({ open, onOpenChange }: ApiSettingsDialogProps
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
               >
-                こちら
+                https://openrouter.ai/keys
               </a>
-              から取得できます
+              から取得できます。
             </p>
           </div>
 
-          {/* 使用可能な機能の説明 */}
+          {/* Gemini APIキー */}
+          <div className="space-y-2">
+            <Label htmlFor="gemini-key">Gemini APIキー</Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  id="gemini-key"
+                  type={showGeminiKey ? 'text' : 'password'}
+                  value={geminiKey}
+                  onChange={(e) => setGeminiKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setShowGeminiKey((prev) => !prev)}
+                >
+                  {showGeminiKey ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Gemini 2.5 Pro Preview TTS で音声生成を行う場合は{' '}
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Google AI Studio
+              </a>
+              から取得した API キーを入力してください。
+            </p>
+          </div>
+
+          {/* 用途の説明 */}
           <div className="rounded-lg border p-4 space-y-2">
-            <h4 className="font-semibold text-sm">使用可能な機能</h4>
+            <h4 className="font-semibold text-sm">利用範囲</h4>
             <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• シナリオ自動生成（GPT-4、Claude、Geminiなど）</li>
-              <li>• 背景画像生成（Flux、DALL-E、Stable Diffusionなど）</li>
-              <li>• 音声生成（TTS対応モデル）</li>
+              <li>・ OpenRouter: シナリオ生成や画像生成などマルチモーダルな AI モデル全般</li>
+              <li>・ Gemini: Gemini 2.5 Pro Preview TTS による音声生成</li>
             </ul>
           </div>
 
-          {/* セキュリティに関する注意 */}
+          {/* セキュリティ注意 */}
           <div className="rounded-lg bg-muted p-4">
             <p className="text-xs text-muted-foreground">
-              <strong>セキュリティについて:</strong> APIキーはブラウザのlocalStorageに保存されます。
-              共有PCでは使用後にAPIキーを削除することを推奨します。
+              <strong>セキュリティに関する注意:</strong> APIキーはブラウザの localStorage に保存されます。
+              共有PCでは利用後にキーを削除するか、localStorage をクリアしてください。
             </p>
           </div>
         </div>
@@ -119,10 +174,11 @@ export function ApiSettingsDialog({ open, onOpenChange }: ApiSettingsDialogProps
           </Button>
           <Button onClick={handleSave}>
             <Save className="mr-2 h-4 w-4" />
-            保存
+            保存する
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+

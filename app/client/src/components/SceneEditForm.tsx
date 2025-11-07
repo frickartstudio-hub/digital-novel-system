@@ -226,13 +226,14 @@ export function SceneEditForm({ scene, onUpdate }: SceneEditFormProps) {
         <div className="space-y-2">
           <Label htmlFor="effect">トランジション効果</Label>
           <Select
-            value={scene.transitions.effect || 'fade'}
-            onValueChange={(value) =>
+            value={scene.transitions?.effect || 'fade'}
+            onValueChange={(value) => {
+              const currentTransitions = scene.transitions ?? { nextSceneId: null, effect: 'fade' };
               updateField('transitions', {
-                ...scene.transitions,
+                ...currentTransitions,
                 effect: value as 'fade' | 'slide' | 'none',
-              })
-            }
+              });
+            }}
           >
             <SelectTrigger id="effect">
               <SelectValue />

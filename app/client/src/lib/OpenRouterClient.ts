@@ -1,6 +1,8 @@
 import { ApiKeyManager } from './ApiKeyManager';
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1';
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GEMINI_TTS_DEFAULT_MODEL = 'gemini-2.5-pro-preview-tts';
 
 export interface OpenRouterMessage {
   role: 'system' | 'user' | 'assistant';
@@ -25,7 +27,7 @@ export interface OpenRouterResponse {
 
 export class OpenRouterClient {
   /**
-   * テキスト生成（チャット）
+   * Text generation via OpenRouter chat completions.
    */
   static async chat(
     messages: OpenRouterMessage[],
@@ -44,7 +46,7 @@ export class OpenRouterClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'HTTP-Referer': window.location.origin,
         'X-Title': 'Digital Novel System',
       },
@@ -66,7 +68,7 @@ export class OpenRouterClient {
   }
 
   /**
-   * 画像生成
+   * Image generation via OpenRouter.
    */
   static async generateImage(
     prompt: string,
@@ -82,13 +84,12 @@ export class OpenRouterClient {
       throw new Error('OpenRouter APIキーが設定されていません');
     }
 
-    // Flux モデルの場合
     if (model.includes('flux')) {
       const response = await fetch(`${OPENROUTER_API_URL}/images/generations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
           'HTTP-Referer': window.location.origin,
           'X-Title': 'Digital Novel System',
         },
@@ -110,11 +111,11 @@ export class OpenRouterClient {
       return data.data[0]?.url || '';
     }
 
-    throw new Error('サポートされていない画像生成モデルです');
+    throw new Error('指定したモデルは画像生成に対応していません');
   }
 
   /**
-   * 利用可能なモデル一覧を取得
+   * Fetch available models from OpenRouter.
    */
   static async getModels(): Promise<any[]> {
     const apiKey = ApiKeyManager.get('openrouter');
@@ -124,7 +125,7 @@ export class OpenRouterClient {
 
     const response = await fetch(`${OPENROUTER_API_URL}/models`, {
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
     });
 
@@ -137,56 +138,68 @@ export class OpenRouterClient {
   }
 
   /**
-   * 音声生成（TTS）
+   * Speech generation powered by Gemini 2.5 Pro Preview TTS.
    */
   static async generateSpeech(
     text: string,
-    model: string = 'google/gemini-2.0-flash-exp:free',
-    voice: string = 'alloy'
+    model: string = GEMINI_TTS_DEFAULT_MODEL,
+    voice: string = 'studio-male-1'
   ): Promise<string> {
-    const apiKey = ApiKeyManager.get('openrouter');
-    if (!apiKey) {
-      throw new Error('OpenRouter APIキーが設定されていません');
+    const geminiKey = ApiKeyManager.get('gemini');
+    if (!geminiKey) {
+      throw new Error('Gemini APIキーが設定されていません');
     }
 
-    // OpenRouter経由でGeminiのTTSを使用
-    // 注: OpenRouterのTTS APIは標準的なものと異なる可能性があるため、
-    // まずはテキストから音声への変換リクエストを試みます
-    const response = await fetch(`${OPENROUTER_API_URL}/audio/speech`, {
+    const endpoint = `${GEMINI_API_BASE}/${model}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': window.location.origin,
-        'X-Title': 'Digital Novel System',
       },
       body: JSON.stringify({
-        model,
-        input: text,
-        voice,
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text }],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: 'audio/mp3',
+          ...(voice
+            ? {
+                voiceConfig: {
+                  voiceName: voice,
+                },
+              }
+            : {}),
+        },
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`OpenRouter TTS API error: ${error}`);
+      throw new Error(`Gemini TTS API error: ${error}`);
     }
 
-    // 音声データをBlobとして取得
-    const audioBlob = await response.blob();
-    
-    // BlobをBase64に変換
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(audioBlob);
-    });
+    const data = await response.json();
+    const audioPart = data?.candidates?.[0]?.content?.parts?.find(
+      (part: any) => part?.inlineData?.mimeType?.startsWith('audio/')
+    );
+
+    const audioData = audioPart?.inlineData?.data;
+    const mimeType = audioPart?.inlineData?.mimeType || 'audio/mp3';
+
+    if (!audioData) {
+      throw new Error('音声データを取得できませんでした');
+    }
+
+    return `data:${mimeType};base64,${audioData}`;
   }
 }
 
 /**
- * 推奨モデル
+ * Recommended model presets.
  */
 export const RECOMMENDED_MODELS = {
   text: {
@@ -194,6 +207,9 @@ export const RECOMMENDED_MODELS = {
     'GPT-4 Turbo': 'openai/gpt-4-turbo',
     'GPT-4o': 'openai/gpt-4o',
     'Gemini Pro': 'google/gemini-pro',
+    'Minimax M2': 'minimax/minimax-m2',
+    'Grok 4 Fast': 'x-ai/grok-4-fast',
+    'DeepSeek Chat v3.1': 'deepseek/deepseek-chat-v3.1',
   },
   image: {
     'Flux Schnell (Free)': 'black-forest-labs/flux-schnell-free',
@@ -201,3 +217,4 @@ export const RECOMMENDED_MODELS = {
     'DALL-E 3': 'openai/dall-e-3',
   },
 };
+

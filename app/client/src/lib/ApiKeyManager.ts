@@ -7,6 +7,7 @@ const STORAGE_KEY = 'novel_api_keys';
 
 export interface ApiKeys {
   openrouter?: string;
+  gemini?: string;
 }
 
 /**

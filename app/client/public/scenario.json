@@ -1,0 +1,122 @@
+{
+  "title": "デジタルノベル サンプルストーリー",
+  "author": "サンプル作者",
+  "version": "1.0",
+  "description": "これはデジタルノベルシステムのサンプルシナリオです。",
+  "scenes": [
+    {
+      "id": 1,
+      "type": "image",
+      "source": "/images/scene1.jpg",
+      "duration": 5000,
+      "audio": {
+        "bgm": "/audio/bgm/opening.mp3"
+      },
+      "subtitles": [
+        {
+          "speaker": "ナレーター",
+          "text": "これは、ある小さな町で起きた物語です。",
+          "start": 0,
+          "end": 3000
+        },
+        {
+          "speaker": "ナレーター",
+          "text": "静かな朝、主人公は目を覚ましました。",
+          "start": 3500,
+          "end": 6000
+        }
+      ],
+      "transitions": {
+        "nextSceneId": 2,
+        "effect": "fade"
+      }
+    },
+    {
+      "id": 2,
+      "type": "image",
+      "source": "/images/scene2.jpg",
+      "duration": 8000,
+      "audio": {
+        "bgm": "/audio/bgm/opening.mp3"
+      },
+      "subtitles": [
+        {
+          "speaker": "主人公",
+          "text": "もう朝か...今日も学校に行かないと。",
+          "start": 1000,
+          "end": 4000
+        },
+        {
+          "speaker": "主人公",
+          "text": "でも、なんだか今日は特別な予感がする。",
+          "start": 4500,
+          "end": 7500
+        }
+      ],
+      "transitions": {
+        "nextSceneId": 3,
+        "effect": "fade"
+      }
+    },
+    {
+      "id": 3,
+      "type": "image",
+      "source": "/images/scene3.jpg",
+      "duration": 7000,
+      "audio": {
+        "bgm": "/audio/bgm/opening.mp3"
+      },
+      "subtitles": [
+        {
+          "speaker": "謎の少女",
+          "text": "あの...すみません。",
+          "start": 0,
+          "end": 2000
+        },
+        {
+          "speaker": "謎の少女",
+          "text": "この学校の場所を教えていただけますか?",
+          "start": 2500,
+          "end": 5500
+        }
+      ],
+      "transitions": {
+        "nextSceneId": 4,
+        "effect": "fade"
+      }
+    },
+    {
+      "id": 4,
+      "type": "image",
+      "source": "/images/scene4.jpg",
+      "duration": 6000,
+      "audio": {
+        "bgm": "/audio/bgm/opening.mp3"
+      },
+      "subtitles": [
+        {
+          "speaker": "主人公",
+          "text": "え? ここが学校ですけど...",
+          "start": 0,
+          "end": 2500
+        },
+        {
+          "speaker": "ナレーター",
+          "text": "こうして、主人公の日常は大きく変わり始めたのでした。",
+          "start": 3000,
+          "end": 7000
+        }
+      ],
+      "transitions": {
+        "nextSceneId": null,
+        "effect": "fade"
+      }
+    }
+  ],
+  "metadata": {
+    "totalScenes": 4,
+    "estimatedDuration": 26000,
+    "tags": ["学園", "ミステリー", "日常"],
+    "rating": "全年齢"
+  }
+}

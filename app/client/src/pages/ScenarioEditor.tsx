@@ -182,13 +182,50 @@ export default function ScenarioEditor() {
   const handleSaveToServer = useCallback(async () => {
     setIsSavingRemote(true);
     try {
-      const record = await saveScenario(DEFAULT_SCENARIO_SLUG, scenario);
+      // Clean up scenario data to prevent undefined values
+      const cleanedScenario = {
+        ...scenario,
+        title: scenario.title ?? "",
+        author: scenario.author ?? "",
+        version: scenario.version ?? "",
+        description: scenario.description ?? "",
+        metadata: {
+          ...scenario.metadata,
+          tags: scenario.metadata?.tags ?? [],
+          rating: scenario.metadata?.rating ?? "",
+          totalScenes: scenario.metadata?.totalScenes ?? scenario.scenes.length,
+          estimatedDuration: scenario.metadata?.estimatedDuration ?? 0,
+        },
+      };
+
+      // Debug logging to check for undefined values
+      if (import.meta.env.DEV) {
+        console.log("[ScenarioEditor] Saving scenario data:", JSON.stringify(cleanedScenario, null, 2));
+      }
+
+      const record = await saveScenario(DEFAULT_SCENARIO_SLUG, cleanedScenario);
       setScenarioId(record.id);
       toast.success('サーバーに保存しました');
     } catch (error) {
       if (isApiError(error) && error.status === 404) {
         try {
-          const record = await createScenario(scenario, DEFAULT_SCENARIO_SLUG);
+          // Clean up scenario data for creation as well
+          const cleanedScenario = {
+            ...scenario,
+            title: scenario.title ?? "",
+            author: scenario.author ?? "",
+            version: scenario.version ?? "",
+            description: scenario.description ?? "",
+            metadata: {
+              ...scenario.metadata,
+              tags: scenario.metadata?.tags ?? [],
+              rating: scenario.metadata?.rating ?? "",
+              totalScenes: scenario.metadata?.totalScenes ?? scenario.scenes.length,
+              estimatedDuration: scenario.metadata?.estimatedDuration ?? 0,
+            },
+          };
+          
+          const record = await createScenario(cleanedScenario, DEFAULT_SCENARIO_SLUG);
           setScenarioId(record.id);
           toast.success('サーバーに新規保存しました');
         } catch (createError) {
@@ -284,7 +321,7 @@ export default function ScenarioEditor() {
                   <Label htmlFor="title">タイトル</Label>
                   <Input
                     id="title"
-                    value={scenario.title}
+                    value={scenario.title ?? ""}
                     onChange={(e) => updateMetadata('title', e.target.value)}
                     placeholder="作品タイトル"
                   />
@@ -293,7 +330,7 @@ export default function ScenarioEditor() {
                   <Label htmlFor="author">作者</Label>
                   <Input
                     id="author"
-                    value={scenario.author || ''}
+                    value={scenario.author ?? ""}
                     onChange={(e) => updateMetadata('author', e.target.value)}
                     placeholder="作者名"
                   />
@@ -302,7 +339,7 @@ export default function ScenarioEditor() {
                   <Label htmlFor="description">説明</Label>
                   <Textarea
                     id="description"
-                    value={scenario.description || ''}
+                    value={scenario.description ?? ""}
                     onChange={(e) => updateMetadata('description', e.target.value)}
                     placeholder="作品の説明"
                     rows={3}

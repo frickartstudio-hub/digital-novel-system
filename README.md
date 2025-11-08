@@ -175,3 +175,6 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルをご覧ください。
 ---
 
 本仕様書は、デジタルノベルシステムの開発に携わるエンジニア、デザイナー、およびプロジェクトマネージャーを対象としています。
+## Additional Documents
+- [Fullstack System Spec](docs/fullstack_system_spec.md)
+- [localStorage to PostgreSQL Migration Guide](docs/migration_plan.md)

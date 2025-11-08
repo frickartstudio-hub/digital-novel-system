@@ -18,24 +18,24 @@ export default function NovelPlayer() {
   const [isLoading, setIsLoading] = useState(true);
   const sceneManagerRef = useRef<SceneManager | null>(null);
 
-  // 初期化
+  // 初期匁E
   useEffect(() => {
     const manager = new SceneManager();
     sceneManagerRef.current = manager;
 
-    // シーン変更時のコールバック
+    // シーン変更時�Eコールバック
     manager.onSceneChange((scene) => {
       setCurrentScene(scene);
       setProgress(manager.getProgress());
       setCurrentTime(0);
     });
 
-    // ストーリー終了時のコールバック
+    // スト�Eリー終亁E��のコールバック
     manager.onEnd(() => {
-      toast.success('ストーリーが終了しました');
+      toast.success('スト�Eリーが終亁E��ました');
     });
 
-    // シナリオを読み込んで最初のシーンを開始
+    // シナリオを読み込んで最初�Eシーンを開姁E
     manager
       .loadScenario('/scenario.json')
       .then(() => {
@@ -55,19 +55,19 @@ export default function NovelPlayer() {
     sceneManagerRef.current.nextScene();
   };
 
-  // 自動再生モードでメディア終了時に次へ進む
+  // 自動�E生モードでメチE��ア終亁E��に次へ進む
   const handleMediaEnd = () => {
     if (playMode === 'auto' && !isPaused) {
       handleNext();
     }
   };
 
-  // 再生モードの切り替え
+  // 再生モード�E刁E��替ぁE
   const handleTogglePlayMode = () => {
     if (!sceneManagerRef.current) return;
     const newMode = sceneManagerRef.current.togglePlayMode();
     setPlayMode(newMode);
-    toast.info(`${newMode === 'auto' ? '自動再生' : '手動進行'}モードに切り替えました`);
+    toast.info(`${newMode === 'auto' ? '自動�E甁E : '手動進衁E}モードに刁E��替えました`);
   };
 
   // 一時停止/再開
@@ -77,12 +77,12 @@ export default function NovelPlayer() {
     setIsPaused(paused);
   };
 
-  // 設定画面を開く（プレースホルダー）
+  // 設定画面を開く（�Eレースホルダー�E�E
   const handleOpenSettings = () => {
-    toast.info('設定機能は準備中です');
+    toast.info('設定機�Eは準備中でぁE);
   };
 
-  // 画面クリックで次へ進む（手動モード時）
+  // 画面クリチE��で次へ進む�E�手動モード時�E�E
   const handleScreenClick = () => {
     if (playMode === 'manual' && !isPaused) {
       handleNext();
@@ -106,10 +106,10 @@ export default function NovelPlayer() {
     <div className="relative w-screen h-screen overflow-hidden bg-black">
       {/* ナビゲーション */}
       <Navigation />
-      {/* プログレスバー */}
+      {/* プログレスバ�E */}
       <ProgressBar progress={progress} />
 
-      {/* メディア表示エリア */}
+      {/* メチE��ア表示エリア */}
       <div
         className="w-full h-full cursor-pointer"
         onClick={handleScreenClick}
@@ -141,3 +141,4 @@ export default function NovelPlayer() {
     </div>
   );
 }
+

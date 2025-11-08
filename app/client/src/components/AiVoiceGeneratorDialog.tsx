@@ -9,10 +9,50 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ApiKeyManager } from '@/lib/ApiKeyManager';
-import { OpenRouterClient } from '@/lib/OpenRouterClient';
+import { OpenRouterClient, GEMINI_TTS_DEFAULT_MODEL } from '@/lib/OpenRouterClient';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Loader2, Play, Sparkles } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
+
+const GEMINI_VOICE_OPTIONS = [
+  { value: 'Zephyr', label: 'Zephyr', description: 'Bright' },
+  { value: 'Puck', label: 'Puck', description: 'Upbeat' },
+  { value: 'Charon', label: 'Charon', description: '情報が豊富' },
+  { value: 'Kore', label: 'Kore', description: 'Firm' },
+  { value: 'Fenrir', label: 'Fenrir', description: 'Excitable' },
+  { value: 'Leda', label: 'Leda', description: 'Youthful' },
+  { value: 'Orus', label: 'Orus', description: 'Firm' },
+  { value: 'Aoede', label: 'Aoede', description: 'Breezy' },
+  { value: 'Callirrhoe', label: 'Callirrhoe', description: 'おおらか' },
+  { value: 'Autonoe', label: 'Autonoe', description: 'Bright' },
+  { value: 'Enceladus', label: 'Enceladus', description: 'Breathy' },
+  { value: 'Iapetus', label: 'Iapetus', description: 'クリア' },
+  { value: 'Umbriel', label: 'Umbriel', description: 'Easy-going' },
+  { value: 'Algieba', label: 'Algieba', description: 'Smooth' },
+  { value: 'Despina', label: 'Despina', description: 'Smooth' },
+  { value: 'Erinome', label: 'Erinome', description: 'クリア' },
+  { value: 'Algenib', label: 'Algenib', description: 'Gravelly' },
+  { value: 'Rasalgethi', label: 'Rasalgethi', description: '情報が豊富' },
+  { value: 'Laomedeia', label: 'Laomedeia', description: 'アップビート' },
+  { value: 'Achernar', label: 'Achernar', description: 'Soft' },
+  { value: 'Alnilam', label: 'Alnilam', description: 'Firm' },
+  { value: 'Schedar', label: 'Schedar', description: 'Even' },
+  { value: 'Gacrux', label: 'Gacrux', description: '成人向け' },
+  { value: 'Pulcherrima', label: 'Pulcherrima', description: 'Forward' },
+  { value: 'Achird', label: 'Achird', description: 'フレンドリー' },
+  { value: 'Zubenelgenubi', label: 'Zubenelgenubi', description: 'Casual' },
+  { value: 'Vindemiatrix', label: 'Vindemiatrix', description: 'Gentle' },
+  { value: 'Sadachbia', label: 'Sadachbia', description: 'Lively' },
+  { value: 'Sadaltager', label: 'Sadaltager', description: '知識が豊富' },
+  { value: 'Sulafat', label: 'Sulafat', description: 'Warm' },
+];
 
 interface AiVoiceGeneratorDialogProps {
   open: boolean;
@@ -31,6 +71,7 @@ export function AiVoiceGeneratorDialog({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedAudio, setGeneratedAudio] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [voice, setVoice] = useState(GEMINI_VOICE_OPTIONS[0].value);
 
   // 初期テキストを反映
   useState(() => {
@@ -55,7 +96,11 @@ export function AiVoiceGeneratorDialog({
     setGeneratedAudio(null);
 
     try {
-      const audioDataUrl = await OpenRouterClient.generateSpeech(text);
+      const audioDataUrl = await OpenRouterClient.generateSpeech(
+        text,
+        GEMINI_TTS_DEFAULT_MODEL,
+        voice,
+      );
       setGeneratedAudio(audioDataUrl);
       toast.success('音声を生成しました');
     } catch (error) {
@@ -115,6 +160,28 @@ export function AiVoiceGeneratorDialog({
             </p>
           </div>
 
+          {/* 音声モデル選択 */}
+          <div className="space-y-2">
+            <Label htmlFor="voice">ボイスモデル</Label>
+            <Select value={voice} onValueChange={setVoice}>
+              <SelectTrigger id="voice">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GEMINI_VOICE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{option.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {option.description}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* 生成ボタン */}
           <Button
             onClick={handleGenerate}
@@ -155,4 +222,3 @@ export function AiVoiceGeneratorDialog({
     </Dialog>
   );
 }
-

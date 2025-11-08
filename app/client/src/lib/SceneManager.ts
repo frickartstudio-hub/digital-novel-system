@@ -21,12 +21,18 @@ export class SceneManager {
       if (!response.ok) {
         throw new Error(`Failed to load scenario: ${response.statusText}`);
       }
-      this.scenarioData = await response.json();
+      const data = await response.json();
+      this.setScenarioData(data);
       console.log('Scenario loaded:', this.scenarioData?.title);
     } catch (error) {
       console.error('Failed to load scenario:', error);
       throw error;
     }
+  }
+
+  setScenarioData(data: ScenarioData) {
+    this.scenarioData = data;
+    this.currentSceneId = 1;
   }
 
   /**

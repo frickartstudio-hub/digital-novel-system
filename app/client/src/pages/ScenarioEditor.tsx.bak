@@ -4,19 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Scene, ScenarioData } from '@/types/novel';
-import { Download, Eye, FileJson, Plus, Trash2, Upload, RefreshCw, Save } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Download, Eye, FileJson, Plus, Trash2, Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocation } from 'wouter';
 import { SceneEditForm } from '@/components/SceneEditForm';
 import { ApiSettingsDialog } from '@/components/ApiSettingsDialog';
 import { AiScenarioGeneratorDialog } from '@/components/AiScenarioGeneratorDialog';
 import { Settings, Sparkles } from 'lucide-react';
-import { fetchScenario, saveScenario, createScenario } from '@/lib/scenarioApi';
-import { isApiError } from '@/lib/apiClient';
-
-const DEFAULT_SCENARIO_SLUG =
-  import.meta.env.VITE_DEFAULT_SCENARIO_SLUG || 'default';
 
 export default function ScenarioEditor() {
   const [, setLocation] = useLocation();
@@ -32,7 +27,9 @@ export default function ScenarioEditor() {
       tags: [],
       rating: '蜈ｨ蟷ｴ鮨｢',
     },
-\ \ }\);\r\n\r\n\ \ const\ \[scenarioId,\ setScenarioId]\ =\ useState<string\ \|\ null>\(null\);\r\n\ \ const\ \[isLoadingRemote,\ setIsLoadingRemote]\ =\ useState\(false\);\r\n\ \ const\ \[isSavingRemote,\ setIsSavingRemote]\ =\ useState\(false\);\r\n\ \ const\ \[selectedSceneIndex, setSelectedSceneIndex] = useState<number | null>(null);
+  });
+
+  const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
   const [aiScenarioGeneratorOpen, setAiScenarioGeneratorOpen] = useState(false);
@@ -151,22 +148,10 @@ export default function ScenarioEditor() {
             <FileJson className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold">繧ｷ繝翫Μ繧ｪ繧ｨ繝・ぅ繧ｿ繝ｼ</h1>
           </div>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setAiScenarioGeneratorOpen(true)}>
               <Sparkles className="mr-2 h-4 w-4" />
               AI逕滓・
-            </Button>
-            <Button
-              variant="outline"
-              onClick={loadScenarioFromServer}
-              disabled={isLoadingRemote}
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              サーバー再読込
-            </Button>
-            <Button onClick={handleSaveToServer} disabled={isSavingRemote}>
-              <Save className="mr-2 h-4 w-4" />
-              サーバー保存
             </Button>
             <Button variant="outline" onClick={() => setApiSettingsOpen(true)}>
               <Settings className="mr-2 h-4 w-4" />
@@ -195,17 +180,7 @@ export default function ScenarioEditor() {
         </div>
       </header>
 
-      <div className="container py-6 space-y-4">
-        <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground gap-2">
-          <span>サーバースラッグ: {DEFAULT_SCENARIO_SLUG}</span>
-          <span>
-            {isLoadingRemote
-              ? 'サーバーと同期中...'
-              : scenarioId
-                ? `ID: ${scenarioId}`
-                : '未保存'}
-          </span>
-        </div>
+      <div className="container py-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* 蟾ｦ蛛ｴ: 繝｡繧ｿ繝・・繧ｿ縺ｨ繧ｷ繝ｼ繝ｳ荳隕ｧ */}
           <div className="space-y-6 lg:col-span-1">
@@ -341,7 +316,6 @@ export default function ScenarioEditor() {
         onOpenChange={setAiScenarioGeneratorOpen}
         onGenerated={(generatedScenario) => {
           setScenario(generatedScenario);
-          setScenarioId(null);
           setSelectedSceneIndex(null);
           toast.success('繧ｷ繝翫Μ繧ｪ繧定ｪｭ縺ｿ霎ｼ縺ｿ縺ｾ縺励◆');
         }}
@@ -349,8 +323,3 @@ export default function ScenarioEditor() {
     </div>
   );
 }
-
-
-
-
-

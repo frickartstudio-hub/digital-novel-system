@@ -4,8 +4,10 @@ import { Label } from '@/components/ui/label';
 import { Upload, X, Sparkles } from 'lucide-react';
 import { AiImageGeneratorDialog } from './AiImageGeneratorDialog';
 import { AiVoiceGeneratorDialog } from './AiVoiceGeneratorDialog';
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { uploadMedia } from '@/lib/mediaApi';
+import { getApiAssetUrl } from '@/lib/apiClient';
 
 interface FileUploadProps {
   label: string;
@@ -15,14 +17,19 @@ interface FileUploadProps {
   type: 'image' | 'video' | 'audio';
 }
 
-export function FileUpload({ label, accept, value, onChange, type }: FileUploadProps) {
+export function FileUpload({
+  label,
+  accept,
+  value,
+  onChange,
+  type,
+}: FileUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [aiGeneratorOpen, setAiGeneratorOpen] = useState(false);
   const [aiVoiceGeneratorOpen, setAiVoiceGeneratorOpen] = useState(false);
 
-  // ファイルタイプに応じたディレクトリを取得
-  const getDirectory = () => {
+  const getDirectory = useCallback(() => {
     switch (type) {
       case 'image':
         return 'images';
@@ -31,69 +38,77 @@ export function FileUpload({ label, accept, value, onChange, type }: FileUploadP
       case 'audio':
         return 'audio';
     }
+  }, [type]);
+
+  const isRemotePath = (path: string) => {
+    return /^https?:\/\//.test(path) || path.startsWith('/uploads/');
   };
 
-  // ファイルアップロード処理
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const saveToLocalFallback = async (file: File) => {
+    const sanitizedName = file.name
+      .replace(/\s+/g, '_')
+      .replace(/[^\w\-\.]/g, '')
+      .toLowerCase();
+    const timestamp = Date.now();
+    const extension = sanitizedName.split('.').pop();
+    const nameWithoutExt = sanitizedName.replace(`.${extension}`, '');
+    const directory = getDirectory();
+    const uniqueName = `${nameWithoutExt}_${timestamp}.${extension}`;
+    const filePath = `/${directory}/${uniqueName}`;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      try {
+        localStorage.setItem(`file_${filePath}`, dataUrl);
+        if (type === 'image') {
+          setPreview(dataUrl);
+        }
+        onChange(filePath);
+        toast.success('ローカルに一時保存しました（サーバー未接続）');
+      } catch (error) {
+        console.error('Failed to save file locally:', error);
+        toast.error('ローカル保存にも失敗しました');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      toast.error('ファイルサイズが大きすぎます（最大10MB）');
+      return;
+    }
+
     try {
-      // ファイルサイズチェック（10MB制限）
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        toast.error('ファイルサイズが大きすぎます（最大10MB）');
-        return;
+      const response = await uploadMedia({
+        file,
+        mediaType: type,
+      });
+
+      if (type === 'image') {
+        const objectUrl = URL.createObjectURL(file);
+        setPreview(objectUrl);
       }
 
-      // ファイル名をサニタイズ（スペースやマルチバイト文字を置換）
-      const sanitizedName = file.name
-        .replace(/\s+/g, '_')
-        .replace(/[^\w\-\.]/g, '')
-        .toLowerCase();
-
-      // タイムスタンプを追加してユニークなファイル名を生成
-      const timestamp = Date.now();
-      const extension = sanitizedName.split('.').pop();
-      const nameWithoutExt = sanitizedName.replace(`.${extension}`, '');
-      const uniqueName = `${nameWithoutExt}_${timestamp}.${extension}`;
-
-      // ファイルパスを生成
-      const directory = getDirectory();
-      const filePath = `/${directory}/${uniqueName}`;
-
-      // FileReaderでファイルを読み込み、Base64に変換
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const dataUrl = e.target?.result as string;
-
-        // localStorageに保存（実際のアプリケーションではサーバーにアップロード）
-        // ここでは簡易的にlocalStorageを使用
-        try {
-          localStorage.setItem(`file_${filePath}`, dataUrl);
-          
-          // プレビュー用にデータURLを保存
-          if (type === 'image') {
-            setPreview(dataUrl);
-          }
-
-          // パスを親コンポーネントに通知
-          onChange(filePath);
-          toast.success('ファイルをアップロードしました');
-        } catch (error) {
-          console.error('Failed to save file:', error);
-          toast.error('ファイルの保存に失敗しました（サイズが大きすぎる可能性があります）');
-        }
-      };
-
-      reader.readAsDataURL(file);
+      onChange(response.mediaUrl);
+      toast.success('サーバーにアップロードしました');
     } catch (error) {
-      console.error('Failed to upload file:', error);
-      toast.error('ファイルのアップロードに失敗しました');
+      console.error(
+        'Failed to upload via API, falling back to localStorage:',
+        error,
+      );
+      toast.error('サーバー保存に失敗したためローカル保存に切り替えます');
+      await saveToLocalFallback(file);
     }
   };
 
-  // パスのクリア
   const handleClear = () => {
     onChange('');
     setPreview(null);
@@ -102,20 +117,24 @@ export function FileUpload({ label, accept, value, onChange, type }: FileUploadP
     }
   };
 
-  // 既存のパスからプレビューを読み込む
-  const loadPreview = () => {
-    if (value && type === 'image') {
-      const storedFile = localStorage.getItem(`file_${value}`);
-      if (storedFile) {
-        setPreview(storedFile);
-      }
+  useEffect(() => {
+    if (!value || type !== 'image') {
+      setPreview(null);
+      return;
     }
-  };
 
-  // 初回レンダリング時にプレビューを読み込む
-  useState(() => {
-    loadPreview();
-  });
+    if (isRemotePath(value)) {
+      setPreview(getApiAssetUrl(value));
+      return;
+    }
+
+    const stored = localStorage.getItem(`file_${value}`);
+    if (stored) {
+      setPreview(stored);
+    } else {
+      setPreview(null);
+    }
+  }, [value, type]);
 
   return (
     <div className="space-y-2">
@@ -124,7 +143,9 @@ export function FileUpload({ label, accept, value, onChange, type }: FileUploadP
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={`/${getDirectory()}/example.${type === 'image' ? 'jpg' : type === 'video' ? 'mp4' : 'mp3'}`}
+          placeholder={`/${getDirectory()}/example.${
+            type === 'image' ? 'jpg' : type === 'video' ? 'mp4' : 'mp3'
+          }`}
           className="flex-1"
         />
         {type === 'image' && (
@@ -200,10 +221,11 @@ export function FileUpload({ label, accept, value, onChange, type }: FileUploadP
         </div>
       )}
       <p className="text-xs text-muted-foreground">
-        {type === 'image' && '推奨: JPEG/PNG、1920×1080、500KB以下'}
-        {type === 'video' && '推奨: MP4（H.264）、1920×1080、5Mbps以下'}
-        {type === 'audio' && '推奨: MP3、128kbps'}
+        {type === 'image' && '推奨: JPEG/PNG, 1920x1080, 500KB以内'}
+        {type === 'video' && '推奨: MP4 (H.264), 1920x1080, 5Mbps以内'}
+        {type === 'audio' && '推奨: MP3, 128kbps'}
       </p>
     </div>
   );
 }
+

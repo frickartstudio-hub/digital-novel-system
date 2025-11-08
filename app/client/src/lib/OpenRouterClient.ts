@@ -2,7 +2,7 @@ import { ApiKeyManager } from './ApiKeyManager';
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GEMINI_TTS_DEFAULT_MODEL = 'gemini-2.5-pro-preview-tts';
+export const GEMINI_TTS_DEFAULT_MODEL = 'gemini-2.5-pro-preview-tts';
 
 export interface OpenRouterMessage {
   role: 'system' | 'user' | 'assistant';
@@ -152,29 +152,36 @@ export class OpenRouterClient {
 
     const endpoint = `${GEMINI_API_BASE}/${model}:generateContent?key=${encodeURIComponent(geminiKey)}`;
 
+    const generationConfig: Record<string, any> = {
+      responseModalities: ['AUDIO'],
+    };
+
+    if (voice) {
+      generationConfig.speechConfig = {
+        voiceConfig: {
+          prebuiltVoiceConfig: {
+            voiceName: voice,
+          },
+        },
+      };
+    }
+
+    const payload: Record<string, any> = {
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text }],
+        },
+      ],
+      generationConfig,
+    };
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text }],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: 'audio/mp3',
-          ...(voice
-            ? {
-                voiceConfig: {
-                  voiceName: voice,
-                },
-              }
-            : {}),
-        },
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -217,4 +224,3 @@ export const RECOMMENDED_MODELS = {
     'DALL-E 3': 'openai/dall-e-3',
   },
 };
-

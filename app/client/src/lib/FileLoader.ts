@@ -1,43 +1,51 @@
 /**
  * ファイルローダー
- * localStorageに保存されたファイルを読み込む
+ * localStorage を利用した過去の実装と、サーバー配信の両方を扱う。
  */
 export class FileLoader {
+  private static isRemote(path: string) {
+    return /^https?:\/\//.test(path) || path.startsWith('/uploads/');
+  }
+
   /**
-   * ファイルパスからソースを取得
-   * localStorageに保存されている場合はそれを返し、なければ通常のパスを返す
+   * ファイルパスからソースを取得する。
+   * 1) サーバー上の URL の場合はそのまま返却。
+   * 2) localStorage に保存されている場合は Base64 を返却。
+   * 3) それ以外は元のパスを返す（後方互換用）。
    */
   static getSource(path: string): string {
     if (!path) return '';
+    if (this.isRemote(path)) {
+      return path;
+    }
 
-    // localStorageから読み込みを試みる
     const storedFile = localStorage.getItem(`file_${path}`);
     if (storedFile) {
       return storedFile;
     }
 
-    // 通常のパスを返す
     return path;
   }
 
   /**
-   * ファイルが存在するかチェック
+   * ファイルが存在するか判定する。
    */
   static exists(path: string): boolean {
     if (!path) return false;
+    if (this.isRemote(path)) {
+      return true;
+    }
 
-    // localStorageにあるかチェック
     const storedFile = localStorage.getItem(`file_${path}`);
     if (storedFile) {
       return true;
     }
 
-    // 通常のパスの場合はtrueを返す（実際の存在チェックはできない）
     return true;
   }
 
   /**
-   * すべてのアップロードファイルを取得
+   * localStorage からすべてのファイルを取得。
    */
   static getAllFiles(): { path: string; dataUrl: string }[] {
     const files: { path: string; dataUrl: string }[] = [];
@@ -57,14 +65,14 @@ export class FileLoader {
   }
 
   /**
-   * ファイルを削除
+   * localStorage から削除。
    */
   static remove(path: string): void {
     localStorage.removeItem(`file_${path}`);
   }
 
   /**
-   * すべてのアップロードファイルを削除
+   * localStorage 内のアップロードファイルをすべて削除。
    */
   static clearAll(): void {
     const keys: string[] = [];
@@ -78,3 +86,4 @@ export class FileLoader {
     keys.forEach((key) => localStorage.removeItem(key));
   }
 }
+

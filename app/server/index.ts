@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { createServer } from "http";
 import morgan from "morgan";
 import path from "path";
@@ -17,8 +18,22 @@ async function startServer() {
   await fs.mkdir(env.UPLOAD_DIR, { recursive: true });
   await initDb();
 
+  const maskedDb =
+    env.DATABASE_URL?.replace(/\/\/([^:@]+):?([^@]*)?@/, (_m, user) => {
+      return `//${user}:****@`;
+    }) || "not set";
+  console.log(
+    "[server] Starting with NODE_ENV=%s PORT=%s UPLOAD_DIR=%s DATABASE_URL=%s",
+    env.NODE_ENV,
+    env.PORT,
+    env.UPLOAD_DIR,
+    maskedDb,
+  );
+
   const app = express();
   const server = createServer(app);
+
+  app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
 
   app.use(
     morgan(env.NODE_ENV === "production" ? "combined" : "dev", {

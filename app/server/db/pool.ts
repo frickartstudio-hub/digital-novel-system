@@ -4,12 +4,11 @@ import { env } from "../config/env";
 export const pool = new Pool({
   connectionString: env.DATABASE_URL || undefined,
   max: Number(process.env.PG_POOL_MAX ?? 10),
-  ssl:
-    env.NODE_ENV === "production"
-      ? {
-          rejectUnauthorized: false,
-        }
-      : undefined,
+  ssl: env.DATABASE_SSL
+    ? {
+        rejectUnauthorized: false,
+      }
+    : undefined,
 });
 
 export async function initDb(): Promise<void> {

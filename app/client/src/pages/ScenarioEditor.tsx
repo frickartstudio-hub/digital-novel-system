@@ -1,10 +1,25 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { Scene, ScenarioData } from '@/types/novel';
-import { Download, Eye, FileJson, Plus, Trash2, Upload, RefreshCw, Save } from 'lucide-react';
+import {
+  Download,
+  Eye,
+  FileJson,
+  Plus,
+  Trash2,
+  Upload,
+  RefreshCw,
+  Save,
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useLocation } from 'wouter';
@@ -12,7 +27,11 @@ import { SceneEditForm } from '@/components/SceneEditForm';
 import { ApiSettingsDialog } from '@/components/ApiSettingsDialog';
 import { AiScenarioGeneratorDialog } from '@/components/AiScenarioGeneratorDialog';
 import { Settings, Sparkles } from 'lucide-react';
-import { fetchScenario, saveScenario, createScenario } from '@/lib/scenarioApi';
+import {
+  createScenario,
+  fetchScenario,
+  saveScenario,
+} from '@/lib/scenarioApi';
 import { isApiError } from '@/lib/apiClient';
 
 const DEFAULT_SCENARIO_SLUG =
@@ -32,12 +51,16 @@ export default function ScenarioEditor() {
       tags: [],
       rating: '全年齢',
     },
-\ \ }\);\r\n\r\n\ \ const\ \[scenarioId,\ setScenarioId]\ =\ useState<string\ \|\ null>\(null\);\r\n\ \ const\ \[isLoadingRemote,\ setIsLoadingRemote]\ =\ useState\(false\);\r\n\ \ const\ \[isSavingRemote,\ setIsSavingRemote]\ =\ useState\(false\);\r\n\ \ const\ \[selectedSceneIndex, setSelectedSceneIndex] = useState<number | null>(null);
+  });
+
+  const [scenarioId, setScenarioId] = useState<string | null>(null);
+  const [isLoadingRemote, setIsLoadingRemote] = useState(false);
+  const [isSavingRemote, setIsSavingRemote] = useState(false);
+  const [selectedSceneIndex, setSelectedSceneIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
   const [aiScenarioGeneratorOpen, setAiScenarioGeneratorOpen] = useState(false);
 
-  // メタチE�Eタの更新
   const updateMetadata = (field: string, value: string) => {
     setScenario((prev) => ({
       ...prev,
@@ -45,7 +68,6 @@ export default function ScenarioEditor() {
     }));
   };
 
-  // シーンの追加
   const addScene = () => {
     const newScene: Scene = {
       id: scenario.scenes.length + 1,
@@ -73,11 +95,9 @@ export default function ScenarioEditor() {
     toast.success('新しいシーンを追加しました');
   };
 
-  // シーンの削除
   const deleteScene = (index: number) => {
     setScenario((prev) => {
       const newScenes = prev.scenes.filter((_, i) => i !== index);
-      // IDを�E割り当て
       const reindexedScenes = newScenes.map((scene, i) => ({
         ...scene,
         id: i + 1,
@@ -101,7 +121,6 @@ export default function ScenarioEditor() {
     toast.success('シーンを削除しました');
   };
 
-  // JSONエクスポ�EチE
   const exportJSON = () => {
     const json = JSON.stringify(scenario, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -114,7 +133,6 @@ export default function ScenarioEditor() {
     toast.success('JSONファイルをダウンロードしました');
   };
 
-  // JSONインポ�EチE
   const importJSON = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -124,6 +142,7 @@ export default function ScenarioEditor() {
       try {
         const json = JSON.parse(e.target?.result as string);
         setScenario(json);
+        setScenarioId(null);
         setSelectedSceneIndex(null);
         toast.success('JSONファイルを読み込みました');
       } catch (error) {
@@ -134,27 +153,73 @@ export default function ScenarioEditor() {
     reader.readAsText(file);
   };
 
-  // プレビュー
   const preview = () => {
-    // シナリオをlocalStorageに保孁E
     localStorage.setItem('preview_scenario', JSON.stringify(scenario));
-    // プレビューペ�Eジに遷移
     setLocation('/preview');
   };
 
+  const loadScenarioFromServer = useCallback(async () => {
+    setIsLoadingRemote(true);
+    try {
+      const record = await fetchScenario(DEFAULT_SCENARIO_SLUG);
+      setScenario(record.data);
+      setScenarioId(record.id);
+      setSelectedSceneIndex(null);
+      toast.success('サーバーからシナリオを読み込みました');
+    } catch (error) {
+      if (isApiError(error) && error.status === 404) {
+        toast.info('サーバーに既存データがないため新規シナリオを使用します');
+        setScenarioId(null);
+      } else {
+        console.error('Failed to fetch scenario from API:', error);
+        toast.error('サーバーからの読み込みに失敗しました');
+      }
+    } finally {
+      setIsLoadingRemote(false);
+    }
+  }, []);
+
+  const handleSaveToServer = useCallback(async () => {
+    setIsSavingRemote(true);
+    try {
+      const record = await saveScenario(DEFAULT_SCENARIO_SLUG, scenario);
+      setScenarioId(record.id);
+      toast.success('サーバーに保存しました');
+    } catch (error) {
+      if (isApiError(error) && error.status === 404) {
+        try {
+          const record = await createScenario(scenario, DEFAULT_SCENARIO_SLUG);
+          setScenarioId(record.id);
+          toast.success('サーバーに新規保存しました');
+        } catch (createError) {
+          console.error('Failed to create scenario via API:', createError);
+          toast.error('サーバー保存に失敗しました');
+        }
+      } else {
+        console.error('Failed to save scenario via API:', error);
+        toast.error('サーバー保存に失敗しました');
+      }
+    } finally {
+      setIsSavingRemote(false);
+    }
+  }, [scenario]);
+
+  useEffect(() => {
+    loadScenarioFromServer();
+  }, [loadScenarioFromServer]);
+
   return (
     <div className="min-h-screen bg-background">
-      {/* ヘッダー */}
       <header className="border-b bg-card">
         <div className="container flex items-center justify-between py-4">
           <div className="flex items-center gap-2">
             <FileJson className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">シナリオエチE��ター</h1>
+            <h1 className="text-2xl font-bold">シナリオエディタ</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <Button variant="outline" onClick={() => setAiScenarioGeneratorOpen(true)}>
               <Sparkles className="mr-2 h-4 w-4" />
-              AI生�E
+              AI生成
             </Button>
             <Button
               variant="outline"
@@ -162,19 +227,19 @@ export default function ScenarioEditor() {
               disabled={isLoadingRemote}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
-              �T�[�o�[�ēǍ�
+              サーバー再読込
             </Button>
             <Button onClick={handleSaveToServer} disabled={isSavingRemote}>
               <Save className="mr-2 h-4 w-4" />
-              �T�[�o�[�ۑ�
+              サーバー保存
             </Button>
             <Button variant="outline" onClick={() => setApiSettingsOpen(true)}>
               <Settings className="mr-2 h-4 w-4" />
-              API設宁E
+              API設定
             </Button>
             <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
               <Upload className="mr-2 h-4 w-4" />
-              インポ�EチE
+              インポート
             </Button>
             <input
               ref={fileInputRef}
@@ -185,7 +250,7 @@ export default function ScenarioEditor() {
             />
             <Button variant="outline" onClick={exportJSON}>
               <Download className="mr-2 h-4 w-4" />
-              エクスポ�EチE
+              エクスポート
             </Button>
             <Button onClick={preview}>
               <Eye className="mr-2 h-4 w-4" />
@@ -197,23 +262,22 @@ export default function ScenarioEditor() {
 
       <div className="container py-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between text-xs text-muted-foreground gap-2">
-          <span>�T�[�o�[�X���b�O: {DEFAULT_SCENARIO_SLUG}</span>
+          <span>サーバースラッグ: {DEFAULT_SCENARIO_SLUG}</span>
           <span>
             {isLoadingRemote
-              ? '�T�[�o�[�Ɠ�����...'
+              ? 'サーバーと同期中...'
               : scenarioId
                 ? `ID: ${scenarioId}`
-                : '���ۑ�'}
+                : '未保存'}
           </span>
         </div>
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* 左側: メタチE�Eタとシーン一覧 */}
           <div className="space-y-6 lg:col-span-1">
-            {/* メタチE�Eタ編雁E*/}
             <Card>
               <CardHeader>
-                <CardTitle>作品惁E��</CardTitle>
-                <CardDescription>シナリオの基本惁E��を�E力してください</CardDescription>
+                <CardTitle>作品メタ情報</CardTitle>
+                <CardDescription>作品全体の基本情報を設定してください</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -222,25 +286,25 @@ export default function ScenarioEditor() {
                     id="title"
                     value={scenario.title}
                     onChange={(e) => updateMetadata('title', e.target.value)}
-                    placeholder="作品のタイトル"
+                    placeholder="作品タイトル"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="author">作老E��</Label>
+                  <Label htmlFor="author">作者</Label>
                   <Input
                     id="author"
                     value={scenario.author || ''}
                     onChange={(e) => updateMetadata('author', e.target.value)}
-                    placeholder="作老E��"
+                    placeholder="作者名"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">説昁E/Label>
+                  <Label htmlFor="description">説明</Label>
                   <Textarea
                     id="description"
                     value={scenario.description || ''}
                     onChange={(e) => updateMetadata('description', e.target.value)}
-                    placeholder="作品の説昁E
+                    placeholder="作品の説明"
                     rows={3}
                   />
                 </div>
@@ -250,11 +314,10 @@ export default function ScenarioEditor() {
               </CardContent>
             </Card>
 
-            {/* シーン一覧 */}
             <Card>
               <CardHeader>
                 <CardTitle>シーン一覧</CardTitle>
-                <CardDescription>シーンをクリチE��して編雁E/CardDescription>
+                <CardDescription>シーンをクリックして編集</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -271,7 +334,7 @@ export default function ScenarioEditor() {
                       <div>
                         <div className="font-medium">シーン {scene.id}</div>
                         <div className="text-xs text-muted-foreground">
-                          {scene.type === 'image' ? '画僁E : '動画'} • {scene.subtitles.length}字幁E
+                          {scene.type === 'image' ? '画像' : '動画'} • {scene.subtitles.length} 字幕
                         </div>
                       </div>
                       <Button
@@ -295,12 +358,13 @@ export default function ScenarioEditor() {
             </Card>
           </div>
 
-          {/* 右側: シーン編雁E��リア */}
           <div className="lg:col-span-2">
             {selectedSceneIndex !== null ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>シーン {scenario.scenes[selectedSceneIndex].id} の編雁E/CardTitle>
+                  <CardTitle>
+                    シーン {scenario.scenes[selectedSceneIndex].id} の編集
+                  </CardTitle>
                   <CardDescription>シーンの詳細を設定してください</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -310,7 +374,7 @@ export default function ScenarioEditor() {
                       setScenario((prev) => ({
                         ...prev,
                         scenes: prev.scenes.map((s, i) =>
-                          i === selectedSceneIndex ? updatedScene : s
+                          i === selectedSceneIndex ? updatedScene : s,
                         ),
                       }));
                     }}
@@ -322,8 +386,7 @@ export default function ScenarioEditor() {
                 <CardContent className="flex min-h-[400px] items-center justify-center">
                   <div className="text-center text-muted-foreground">
                     <FileJson className="mx-auto mb-4 h-12 w-12 opacity-50" />
-                    <p>左側のシーン一覧からシーンを選択するか、E/p>
-                    <p>新しいシーンを追加してください</p>
+                    <p>左のシーン一覧から選択するか、右上のボタンで新規作成してください。</p>
                   </div>
                 </CardContent>
               </Card>
@@ -332,10 +395,8 @@ export default function ScenarioEditor() {
         </div>
       </div>
 
-      {/* API設定ダイアログ */}
       <ApiSettingsDialog open={apiSettingsOpen} onOpenChange={setApiSettingsOpen} />
-      
-      {/* AIシナリオ生�Eダイアログ */}
+
       <AiScenarioGeneratorDialog
         open={aiScenarioGeneratorOpen}
         onOpenChange={setAiScenarioGeneratorOpen}
@@ -349,8 +410,4 @@ export default function ScenarioEditor() {
     </div>
   );
 }
-
-
-
-
 

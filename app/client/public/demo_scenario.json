@@ -1,0 +1,118 @@
+{
+  "title": "桜の季節に",
+  "author": "デジタルノベルシステム",
+  "description": "春の訪れとともに始まる、二人の物語。",
+  "scenes": [
+    {
+      "id": 1,
+      "type": "image",
+      "source": "/images/demo_scene1.jpg",
+      "duration": 8000,
+      "audio": {
+        "voice": "/audio/narration_scene1.wav"
+      },
+      "subtitles": [
+        {
+          "speaker": "ナレーター",
+          "text": "春の訪れとともに、新しい学期が始まった。朝の教室には、まだ誰もいない。窓の外では、桜の花びらが静かに舞っている。",
+          "start": 0,
+          "end": 8000
+        }
+      ],
+      "transitions": {
+        "nextSceneId": 2,
+        "effect": "fade"
+      }
+    },
+    {
+      "id": 2,
+      "type": "image",
+      "source": "/images/demo_scene2.jpg",
+      "duration": 12000,
+      "audio": {
+        "voice": "/audio/female_scene2.wav"
+      },
+      "subtitles": [
+        {
+          "speaker": "美咲",
+          "text": "ここからの景色、本当にきれいだね。夕日に染まる街並みを見ていると、なんだか心が落ち着くの。",
+          "start": 0,
+          "end": 6000
+        },
+        {
+          "speaker": "拓海",
+          "text": "そうだね。ここに来ると、いつも時間を忘れてしまうよ。",
+          "start": 6500,
+          "end": 12000
+        }
+      ],
+      "transitions": {
+        "nextSceneId": 3,
+        "effect": "fade"
+      }
+    },
+    {
+      "id": 3,
+      "type": "image",
+      "source": "/images/demo_scene3.jpg",
+      "duration": 6000,
+      "audio": {
+        "voice": "/audio/female_scene3.wav"
+      },
+      "subtitles": [
+        {
+          "speaker": "美咲",
+          "text": "このカフェ、とっても落ち着くね。コーヒーの香りが心地いい。",
+          "start": 0,
+          "end": 6000
+        }
+      ],
+      "transitions": {
+        "nextSceneId": 4,
+        "effect": "fade"
+      }
+    },
+    {
+      "id": 4,
+      "type": "image",
+      "source": "/images/demo_scene4.jpg",
+      "duration": 8000,
+      "audio": {
+        "voice": "/audio/narration_scene4.wav"
+      },
+      "subtitles": [
+        {
+          "speaker": "ナレーター",
+          "text": "満開の桜の下を、二人は並んで歩いていた。舞い散る花びらが、まるで祝福しているかのようだった。",
+          "start": 0,
+          "end": 8000
+        }
+      ],
+      "transitions": {
+        "nextSceneId": 5,
+        "effect": "fade"
+      }
+    },
+    {
+      "id": 5,
+      "type": "image",
+      "source": "/images/demo_scene5.jpg",
+      "duration": 6000,
+      "audio": {
+        "voice": "/audio/female_scene5.wav"
+      },
+      "subtitles": [
+        {
+          "speaker": "美咲",
+          "text": "もう、こんな時間。そろそろ帰らないと。また明日ね。",
+          "start": 0,
+          "end": 6000
+        }
+      ],
+      "transitions": {
+        "nextSceneId": null,
+        "effect": "fade"
+      }
+    }
+  ]
+}

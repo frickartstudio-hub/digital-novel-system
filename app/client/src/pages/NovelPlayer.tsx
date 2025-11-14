@@ -21,6 +21,7 @@ export default function NovelPlayer() {
   const [subtitlesEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const sceneManagerRef = useRef<SceneManager | null>(null);
+  const autoPlayTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const manager = new SceneManager();
@@ -48,7 +49,7 @@ export default function NovelPlayer() {
           error,
         );
         manager
-          .loadScenario('/scenario.json')
+          .loadScenario('/demo_scenario.json')
           .then(() => {
             manager.loadScene(1);
             setIsLoading(false);
@@ -70,10 +71,30 @@ export default function NovelPlayer() {
   };
 
   const handleMediaEnd = () => {
-    if (playMode === 'auto' && !isPaused) {
-      handleNext();
-    }
+    // 音声終了時の処理は行わない（durationベースで進行）
   };
+
+  // 自動進行タイマー
+  useEffect(() => {
+    if (!currentScene || playMode !== 'auto' || isPaused) {
+      if (autoPlayTimerRef.current) {
+        clearTimeout(autoPlayTimerRef.current);
+        autoPlayTimerRef.current = null;
+      }
+      return;
+    }
+
+    // duration分待ってから次のシーンへ
+    autoPlayTimerRef.current = window.setTimeout(() => {
+      handleNext();
+    }, currentScene.duration);
+
+    return () => {
+      if (autoPlayTimerRef.current) {
+        clearTimeout(autoPlayTimerRef.current);
+      }
+    };
+  }, [currentScene, playMode, isPaused]);
 
   const handleTogglePlayMode = () => {
     if (!sceneManagerRef.current) return;

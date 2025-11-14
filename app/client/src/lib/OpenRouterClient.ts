@@ -4,6 +4,80 @@ const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 export const GEMINI_TTS_DEFAULT_MODEL = 'gemini-2.5-pro-preview-tts';
 
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const length = binary.length;
+  const bytes = new Uint8Array(length);
+  for (let i = 0; i < length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
+function convertLinear16ToWavBase64(
+  pcmBase64: string,
+  sampleRate = 24000,
+  numChannels = 1,
+  bitsPerSample = 16,
+): string {
+  const pcmBytes = base64ToUint8Array(pcmBase64);
+  const headerSize = 44;
+  const wavBuffer = new ArrayBuffer(headerSize + pcmBytes.length);
+  const view = new DataView(wavBuffer);
+  let offset = 0;
+
+  const writeString = (value: string) => {
+    for (let i = 0; i < value.length; i += 1) {
+      view.setUint8(offset, value.charCodeAt(i));
+      offset += 1;
+    }
+  };
+
+  const writeUint32 = (value: number) => {
+    view.setUint32(offset, value, true);
+    offset += 4;
+  };
+
+  const writeUint16 = (value: number) => {
+    view.setUint16(offset, value, true);
+    offset += 2;
+  };
+
+  const blockAlign = numChannels * (bitsPerSample / 8);
+  const byteRate = sampleRate * blockAlign;
+
+  writeString('RIFF');
+  writeUint32(36 + pcmBytes.length);
+  writeString('WAVE');
+
+  writeString('fmt ');
+  writeUint32(16);
+  writeUint16(1);
+  writeUint16(numChannels);
+  writeUint32(sampleRate);
+  writeUint32(byteRate);
+  writeUint16(blockAlign);
+  writeUint16(bitsPerSample);
+
+  writeString('data');
+  writeUint32(pcmBytes.length);
+
+  new Uint8Array(wavBuffer, headerSize).set(pcmBytes);
+
+  return arrayBufferToBase64(wavBuffer);
+}
+
 export interface OpenRouterMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -147,13 +221,14 @@ export class OpenRouterClient {
   ): Promise<string> {
     const geminiKey = ApiKeyManager.get('gemini');
     if (!geminiKey) {
-      throw new Error('Gemini APIキーが設定されていません');
+      throw new Error('Gemini APIキーが設定されてぁE��せん');
     }
 
     const endpoint = `${GEMINI_API_BASE}/${model}:generateContent?key=${encodeURIComponent(geminiKey)}`;
 
     const generationConfig: Record<string, any> = {
       responseModalities: ['AUDIO'],
+      responseMimeType: 'text/plain',
     };
 
     if (voice) {
@@ -195,14 +270,25 @@ export class OpenRouterClient {
     );
 
     const audioData = audioPart?.inlineData?.data;
-    const mimeType = audioPart?.inlineData?.mimeType || 'audio/mp3';
+    const mimeType = audioPart?.inlineData?.mimeType || 'audio/l16';
 
     if (!audioData) {
-      throw new Error('音声データを取得できませんでした');
+      throw new Error('Failed to retrieve audio data from Gemini response');
     }
 
-    return `data:${mimeType};base64,${audioData}`;
+    const [baseMimeType] = mimeType.split(';');
+    const normalizedMime = baseMimeType?.toLowerCase();
+    const playableMimeTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/aac'];
+
+    if (normalizedMime && playableMimeTypes.includes(normalizedMime)) {
+      return `data:${baseMimeType};base64,${audioData}`;
+    }
+
+    const wavBase64 = convertLinear16ToWavBase64(audioData);
+    return `data:audio/wav;base64,${wavBase64}`;
   }
+
+
 }
 
 /**

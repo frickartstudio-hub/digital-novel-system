@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Play, Sparkles } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 const GEMINI_VOICE_OPTIONS = [
@@ -80,6 +80,12 @@ export function AiVoiceGeneratorDialog({
     }
   });
 
+  useEffect(() => {
+    if (audioRef.current && generatedAudio) {
+      audioRef.current.load();
+    }
+  }, [generatedAudio]);
+
   // 生成
   const handleGenerate = async () => {
     if (!text.trim()) {
@@ -112,9 +118,14 @@ export function AiVoiceGeneratorDialog({
   };
 
   // 再生
-  const handlePlay = () => {
-    if (audioRef.current && generatedAudio) {
-      audioRef.current.play();
+  const handlePlay = async () => {
+    if (!audioRef.current || !generatedAudio) return;
+
+    try {
+      await audioRef.current.play();
+    } catch (error) {
+      console.error('Failed to play generated audio:', error);
+      toast.error('音声の再生に失敗しました: ' + (error as Error).message);
     }
   };
 

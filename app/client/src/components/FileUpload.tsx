@@ -28,6 +28,7 @@ export function FileUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [aiGeneratorOpen, setAiGeneratorOpen] = useState(false);
   const [aiVoiceGeneratorOpen, setAiVoiceGeneratorOpen] = useState(false);
+  const tempObjectUrlRef = useRef<string | null>(null);
 
   const getDirectory = useCallback(() => {
     switch (type) {
@@ -42,6 +43,15 @@ export function FileUpload({
 
   const isRemotePath = (path: string) => {
     return /^https?:\/\//.test(path) || path.startsWith('/uploads/');
+  };
+
+  const updatePreviewFromFile = (file: File) => {
+    if (tempObjectUrlRef.current) {
+      URL.revokeObjectURL(tempObjectUrlRef.current);
+    }
+    const objectUrl = URL.createObjectURL(file);
+    tempObjectUrlRef.current = objectUrl;
+    setPreview(objectUrl);
   };
 
   const saveToLocalFallback = async (file: File) => {
@@ -61,14 +71,12 @@ export function FileUpload({
       const dataUrl = e.target?.result as string;
       try {
         localStorage.setItem(`file_${filePath}`, dataUrl);
-        if (type === 'image') {
-          setPreview(dataUrl);
-        }
+        setPreview(dataUrl);
         onChange(filePath);
-        toast.success('ローカルに一時保存しました（サーバー未接続）');
+        toast.success('ローカルに保存しました。シナリオの参照パスを更新しました。');
       } catch (error) {
         console.error('Failed to save file locally:', error);
-        toast.error('ローカル保存にも失敗しました');
+        toast.error('ローカル保存に失敗しました。');
       }
     };
     reader.readAsDataURL(file);
@@ -82,7 +90,7 @@ export function FileUpload({
 
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      toast.error('ファイルサイズが大きすぎます（最大10MB）');
+      toast.error('ファイルサイズが 10MB を超えています。');
       return;
     }
 
@@ -92,19 +100,15 @@ export function FileUpload({
         mediaType: type,
       });
 
-      if (type === 'image') {
-        const objectUrl = URL.createObjectURL(file);
-        setPreview(objectUrl);
-      }
-
+      updatePreviewFromFile(file);
       onChange(response.mediaUrl);
-      toast.success('サーバーにアップロードしました');
+      toast.success('アップロードが完了しました。');
     } catch (error) {
       console.error(
         'Failed to upload via API, falling back to localStorage:',
         error,
       );
-      toast.error('サーバー保存に失敗したためローカル保存に切り替えます');
+      toast.error('アップロードに失敗したためローカル保存へ切り替えました。');
       await saveToLocalFallback(file);
     }
   };
@@ -118,7 +122,7 @@ export function FileUpload({
   };
 
   useEffect(() => {
-    if (!value || type !== 'image') {
+    if (!value) {
       setPreview(null);
       return;
     }
@@ -131,10 +135,19 @@ export function FileUpload({
     const stored = localStorage.getItem(`file_${value}`);
     if (stored) {
       setPreview(stored);
-    } else {
-      setPreview(null);
+      return;
     }
-  }, [value, type]);
+
+    setPreview(value.startsWith('/') ? value : `/${value}`);
+  }, [value]);
+
+  useEffect(() => {
+    return () => {
+      if (tempObjectUrlRef.current) {
+        URL.revokeObjectURL(tempObjectUrlRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="space-y-2">
@@ -174,7 +187,7 @@ export function FileUpload({
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload className="mr-2 h-4 w-4" />
-          アップロード
+          ファイル選択
         </Button>
         {value && (
           <Button type="button" variant="ghost" size="icon" onClick={handleClear}>
@@ -211,18 +224,32 @@ export function FileUpload({
           }}
         />
       )}
-      {preview && type === 'image' && (
-        <div className="mt-2">
-          <img
-            src={preview}
-            alt="Preview"
-            className="max-w-full h-auto max-h-40 rounded-lg border"
-          />
+      {preview && (
+        <div className="mt-2 space-y-2">
+          {type === 'image' && (
+            <img
+              src={preview}
+              alt="Preview"
+              className="max-w-full h-auto max-h-40 rounded-lg border"
+            />
+          )}
+          {type === 'video' && (
+            <video
+              controls
+              className="w-full max-h-60 rounded-lg border bg-black"
+              src={preview}
+            />
+          )}
+          {type === 'audio' && (
+            <audio controls className="w-full" src={preview}>
+              ブラウザが音声プレビューをサポートしていません。
+            </audio>
+          )}
         </div>
       )}
       <p className="text-xs text-muted-foreground">
-        {type === 'image' && '推奨: JPEG/PNG, 1920x1080, 500KB以内'}
-        {type === 'video' && '推奨: MP4 (H.264), 1920x1080, 5Mbps以内'}
+        {type === 'image' && '推奨: JPEG/PNG, 1920x1080, 500KB 程度'}
+        {type === 'video' && '推奨: MP4 (H.264), 1920x1080, 5Mbps 程度'}
         {type === 'audio' && '推奨: MP3, 128kbps'}
       </p>
     </div>

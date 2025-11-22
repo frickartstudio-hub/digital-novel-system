@@ -49,9 +49,11 @@ export function SceneEditForm({ scene, onUpdate }: SceneEditFormProps) {
 
   const updateSubtitle = (index: number, field: keyof Subtitle, value: any) => {
     const newSubtitles = [...scene.subtitles];
+    const nextValue =
+      field === 'voice' ? (value ? value : undefined) : value;
     newSubtitles[index] = {
       ...newSubtitles[index],
-      [field]: value,
+      [field]: nextValue,
     };
 
     onUpdate({
@@ -118,7 +120,7 @@ export function SceneEditForm({ scene, onUpdate }: SceneEditFormProps) {
         <h3 className="text-lg font-semibold">音声設定</h3>
 
         <FileUpload
-          label="ボイス"
+          label="ボイス（共通）"
           accept="audio/*"
           value={scene.audio.voice || ''}
           onChange={(path) => updateAudio('voice', path)}
@@ -213,6 +215,13 @@ export function SceneEditForm({ scene, onUpdate }: SceneEditFormProps) {
                     />
                   </div>
                 </div>
+                <FileUpload
+                  label="字幕ボイス"
+                  accept="audio/*"
+                  value={subtitle.voice || ''}
+                  onChange={(path) => updateSubtitle(index, 'voice', path)}
+                  type="audio"
+                />
               </div>
             ))}
           </div>

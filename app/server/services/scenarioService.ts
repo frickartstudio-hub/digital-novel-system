@@ -16,6 +16,7 @@ const subtitleSchema = z.object({
   text: z.string(),
   start: z.number().int().nonnegative(),
   end: z.number().int().nonnegative(),
+  voice: z.string().optional(),
 });
 
 const sceneSchema = z.object({

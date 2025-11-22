@@ -28,3 +28,21 @@ export async function uploadMedia(req: Request, res: Response) {
     data: result,
   });
 }
+
+export async function serveMedia(req: Request, res: Response) {
+  const { id } = req.params;
+
+  if (!id) {
+    throw new HttpError(400, "Media ID is required");
+  }
+
+  const media = await mediaService.getMedia(id);
+
+  if (!media) {
+    throw new HttpError(404, "Media not found");
+  }
+
+  res.setHeader("Content-Type", media.mimeType);
+  res.setHeader("Cache-Control", "public, max-age=31536000");
+  res.send(media.data);
+}

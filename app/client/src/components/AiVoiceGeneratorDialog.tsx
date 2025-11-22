@@ -135,7 +135,13 @@ export function AiVoiceGeneratorDialog({
 
     const timestamp = Date.now();
     const filePath = `/audio/ai_generated_${timestamp}.mp3`;
-    localStorage.setItem(`file_${filePath}`, generatedAudio);
+    try {
+      localStorage.setItem(`file_${filePath}`, generatedAudio);
+    } catch (error) {
+      console.error('Failed to store generated audio:', error);
+      toast.error('ストレージ容量が不足しています。ダウンロードして保存してください。');
+      return;
+    }
 
     onGenerated(filePath);
     toast.success('音声を追加しました');
@@ -216,14 +222,21 @@ export function AiVoiceGeneratorDialog({
           {generatedAudio && (
             <div className="space-y-2">
               <Label>生成された音声</Label>
-              <div className="flex gap-2">
-                <Button onClick={handlePlay} variant="outline" className="flex-1">
-                  <Play className="mr-2 h-4 w-4" />
-                  再生
-                </Button>
-                <Button onClick={handleUse} className="flex-1">
-                  この音声を使用
-                </Button>
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Button onClick={handlePlay} variant="outline" className="flex-1">
+                    <Play className="mr-2 h-4 w-4" />
+                    再生
+                  </Button>
+                  <Button onClick={handleUse} className="flex-1">
+                    この音声を使用
+                  </Button>
+                </div>
+                <a href={generatedAudio} download="ai_generated_voice.wav">
+                  <Button type="button" variant="secondary" className="w-full">
+                    ダウンロード
+                  </Button>
+                </a>
               </div>
               <audio ref={audioRef} src={generatedAudio} className="hidden" />
             </div>

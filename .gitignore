@@ -41,3 +41,5 @@ media/
 *.wav
 *.ogg
 *.webm
+# Allow bundled demo audio assets used for built-in scenarios
+!app/client/public/audio/**/*.wav

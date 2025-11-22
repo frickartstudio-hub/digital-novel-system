@@ -10,7 +10,7 @@
       "source": "/images/scene1.jpg",
       "duration": 5000,
       "audio": {
-        "bgm": "/audio/bgm/opening.mp3"
+        "bgm": "/audio/bgm/opening.wav"
       },
       "subtitles": [
         {
@@ -37,7 +37,7 @@
       "source": "/images/scene2.jpg",
       "duration": 8000,
       "audio": {
-        "bgm": "/audio/bgm/opening.mp3"
+        "bgm": "/audio/bgm/opening.wav"
       },
       "subtitles": [
         {
@@ -64,7 +64,7 @@
       "source": "/images/scene3.jpg",
       "duration": 7000,
       "audio": {
-        "bgm": "/audio/bgm/opening.mp3"
+        "bgm": "/audio/bgm/opening.wav"
       },
       "subtitles": [
         {
@@ -91,7 +91,7 @@
       "source": "/images/scene4.jpg",
       "duration": 6000,
       "audio": {
-        "bgm": "/audio/bgm/opening.mp3"
+        "bgm": "/audio/bgm/opening.wav"
       },
       "subtitles": [
         {

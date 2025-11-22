@@ -1,22 +1,31 @@
+import { getApiAssetUrl } from "./apiClient";
+
 /**
  * ファイルローダー
- * localStorage を利用した過去の実装と、サーバー配信の両方を扱う。
- */
+ * localStorage を利用した過去の実裁E��、サーバ�E配信の両方を扱ぁE��E */
 export class FileLoader {
-  private static isRemote(path: string) {
-    return /^https?:\/\//.test(path) || path.startsWith('/uploads/');
+  private static isExternal(path: string) {
+    return /^https?:\/\//.test(path);
+  }
+
+  private static isUploadedAsset(path: string) {
+    return path.startsWith("/uploads/") || path.startsWith("/api/media/");
   }
 
   /**
-   * ファイルパスからソースを取得する。
-   * 1) サーバー上の URL の場合はそのまま返却。
-   * 2) localStorage に保存されている場合は Base64 を返却。
-   * 3) それ以外は元のパスを返す（後方互換用）。
+   * ファイルパスからソースを取得する
+   * 1) サーバー上の URL の場合、そのまま返却
+   * 2) localStorage に保存されている場合、Base64 を返却
+   * 3) それ以外の場合、パスを返す（後方互換用）
    */
   static getSource(path: string): string {
-    if (!path) return '';
-    if (this.isRemote(path)) {
+    if (!path) return "";
+    if (this.isExternal(path)) {
       return path;
+    }
+
+    if (this.isUploadedAsset(path)) {
+      return getApiAssetUrl(path);
     }
 
     const storedFile = localStorage.getItem(`file_${path}`);
@@ -28,11 +37,10 @@ export class FileLoader {
   }
 
   /**
-   * ファイルが存在するか判定する。
-   */
+   * ファイルが存在するか判定する、E   */
   static exists(path: string): boolean {
     if (!path) return false;
-    if (this.isRemote(path)) {
+    if (this.isExternal(path) || this.isUploadedAsset(path)) {
       return true;
     }
 
@@ -45,15 +53,14 @@ export class FileLoader {
   }
 
   /**
-   * localStorage からすべてのファイルを取得。
-   */
+   * localStorage からすべてのファイルを取得、E   */
   static getAllFiles(): { path: string; dataUrl: string }[] {
     const files: { path: string; dataUrl: string }[] = [];
 
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('file_')) {
-        const path = key.replace('file_', '');
+      if (key && key.startsWith("file_")) {
+        const path = key.replace("file_", "");
         const dataUrl = localStorage.getItem(key);
         if (dataUrl) {
           files.push({ path, dataUrl });
@@ -65,25 +72,23 @@ export class FileLoader {
   }
 
   /**
-   * localStorage から削除。
-   */
+   * localStorage から削除、E   */
   static remove(path: string): void {
     localStorage.removeItem(`file_${path}`);
   }
 
   /**
-   * localStorage 内のアップロードファイルをすべて削除。
-   */
+   * localStorage 冁E�EアチE�Eロードファイルをすべて削除、E   */
   static clearAll(): void {
     const keys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('file_')) {
+      if (key && key.startsWith("file_")) {
         keys.push(key);
       }
     }
 
-    keys.forEach((key) => localStorage.removeItem(key));
+    keys.forEach(key => localStorage.removeItem(key));
   }
 }
 

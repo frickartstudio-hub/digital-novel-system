@@ -1,6 +1,10 @@
 import dotenv from "dotenv";
+import path from "path";
 
 dotenv.config();
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: path.resolve(process.cwd(), "app/.env") });
+}
 
 const required = ["DATABASE_URL"] as const;
 

@@ -66,7 +66,8 @@ export class SceneManager {
     const currentScene = this.getCurrentScene();
     if (!currentScene) return null;
 
-    const nextSceneId = currentScene.transitions.nextSceneId;
+    const nextSceneId =
+      currentScene.transitions?.nextSceneId ?? this.getFallbackNextSceneId();
     if (nextSceneId) {
       return this.loadScene(nextSceneId);
     } else {
@@ -153,5 +154,18 @@ export class SceneManager {
    */
   getScenarioData(): ScenarioData | null {
     return this.scenarioData;
+  }
+
+  /**
+   * transitions が未設定の場合のフォールバックで次のシーンIDを推定
+   */
+  private getFallbackNextSceneId(): number | null {
+    if (!this.scenarioData) return null;
+    const currentIndex = this.scenarioData.scenes.findIndex(
+      s => s.id === this.currentSceneId,
+    );
+    if (currentIndex === -1) return null;
+    const nextScene = this.scenarioData.scenes[currentIndex + 1];
+    return nextScene ? nextScene.id : null;
   }
 }

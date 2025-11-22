@@ -14,6 +14,8 @@ export interface Subtitle {
   start: number;
   /** 表示終了時刻（ミリ秒） */
   end: number;
+  /** Optional voice clip path associated with this subtitle */
+  voice?: string;
 }
 
 /**
